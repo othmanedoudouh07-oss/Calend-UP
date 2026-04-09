@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
-import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useTaskStore, type DailyRecurring } from '@/stores/useTaskStore';
 import { useHealthStore } from '@/stores/useHealthStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Sparkles, AlarmClock, Plus, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, AlarmClock, Plus, Trash2 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import { FloatingAddButton } from '@/components/FloatingAddButton';
 import { QuickAddSheet } from '@/components/QuickAddSheet';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -14,7 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WeekStrip } from '@/components/planning/WeekStrip';
+import { DayProgress } from '@/components/planning/DayProgress';
+import { TimelineItem } from '@/components/planning/TimelineItem';
+import { EmptyDay } from '@/components/planning/EmptyDay';
 
 export default function Planning() {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -38,12 +41,21 @@ export default function Planning() {
 
   const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
   const dayStr = format(selectedDay, 'yyyy-MM-dd');
+
+  // Task counts per day for week strip dots
+  const taskCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    days.forEach((day) => {
+      const ds = format(day, 'yyyy-MM-dd');
+      counts[ds] = tasks.filter((t) => t.date === ds).length + events.filter((e) => e.date === ds).length;
+    });
+    return counts;
+  }, [tasks, events, days]);
+
   const dayTasks = useMemo(() => tasks.filter((t) => t.date === dayStr), [tasks, dayStr]);
   const dayEvents = useMemo(() => events.filter((e) => e.date === dayStr), [events, dayStr]);
 
-  // Filter daily recurrings active for the selected day
   const activeDailyRecurrings = useMemo(() => {
     return dailyRecurrings.filter((r) => {
       if (!r.active) return false;
@@ -55,26 +67,26 @@ export default function Planning() {
 
   const dayMeds = useMemo(() => {
     return medications.filter((m) => m.active).map((m) => {
-      const intake = intakes.find(
-        (i) => i.medicationId === m.id && i.date === dayStr
-      );
+      const intake = intakes.find((i) => i.medicationId === m.id && i.date === dayStr);
       return { ...m, intake };
     });
   }, [medications, intakes, dayStr]);
 
-  const getCategoryColor = (id: string) =>
-    categories.find((c) => c.id === id)?.color || 'bg-muted';
   const getCategoryIcon = (id: string) =>
     categories.find((c) => c.id === id)?.icon || '📌';
 
+  // Progress
+  const totalItems = dayTasks.length + activeDailyRecurrings.length;
+  const completedItems = dayTasks.filter((t) => t.status === 'completed').length;
+  const pendingItems = totalItems - completedItems;
+
+  // Suggestions
   const weekday = selectedDay.getDay();
   const suggestions = useMemo(() => {
     const dayCounts: Record<string, number> = {};
     tasks.forEach((t) => {
       const d = new Date(t.date).getDay();
-      if (d === weekday) {
-        dayCounts[t.title] = (dayCounts[t.title] || 0) + 1;
-      }
+      if (d === weekday) dayCounts[t.title] = (dayCounts[t.title] || 0) + 1;
     });
     return Object.entries(dayCounts)
       .filter(([, count]) => count >= 2)
@@ -99,82 +111,52 @@ export default function Planning() {
     setRecurringOpen(false);
   };
 
+  const hasItems = dayTasks.length > 0 || dayEvents.length > 0 || dayMeds.length > 0 || activeDailyRecurrings.length > 0;
+  let timelineIndex = 0;
+
   return (
     <div className="pb-24 safe-top">
       {/* Header */}
-      <div className="px-5 pt-6 pb-4 flex items-center justify-between">
+      <div className="px-5 pt-6 pb-3 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Planning</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h1 className="text-2xl font-extrabold tracking-tight">Planning</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {format(weekStart, "'Semaine du' d MMMM", { locale: fr })}
           </p>
         </div>
         <button
           onClick={() => setRecurringOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-medium"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
         >
-          <AlarmClock className="w-4 h-4" />
+          <AlarmClock className="w-3.5 h-3.5" />
           Récurrent
         </button>
       </div>
 
-      {/* Week navigation */}
-      <div className="px-5 flex items-center justify-between mb-3">
-        <button onClick={() => setWeekOffset((o) => o - 1)} className="p-2 rounded-xl bg-muted">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => { setWeekOffset(0); setSelectedDay(new Date()); }}
-          className="text-xs font-medium text-primary"
-        >
-          Aujourd'hui
-        </button>
-        <button onClick={() => setWeekOffset((o) => o + 1)} className="p-2 rounded-xl bg-muted">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
+      {/* Week strip */}
+      <WeekStrip
+        days={days}
+        selectedDay={selectedDay}
+        onSelectDay={setSelectedDay}
+        onPrev={() => setWeekOffset((o) => o - 1)}
+        onNext={() => setWeekOffset((o) => o + 1)}
+        onToday={() => { setWeekOffset(0); setSelectedDay(new Date()); }}
+        taskCounts={taskCounts}
+      />
 
-      {/* Day pills */}
-      <div className="flex gap-1.5 px-5 overflow-x-auto pb-2">
-        {days.map((day) => {
-          const active = isSameDay(day, selectedDay);
-          const today = isToday(day);
-          const hasTasks = tasks.some((t) => t.date === format(day, 'yyyy-MM-dd'));
-          return (
-            <button
-              key={day.toISOString()}
-              onClick={() => setSelectedDay(day)}
-              className={cn(
-                'flex flex-col items-center min-w-[44px] py-2 px-2 rounded-2xl transition-all',
-                active
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                  : today
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground'
-              )}
-            >
-              <span className="text-[10px] font-medium uppercase">
-                {format(day, 'EEE', { locale: fr })}
-              </span>
-              <span className="text-lg font-bold">{format(day, 'd')}</span>
-              {hasTasks && !active && (
-                <div className="w-1.5 h-1.5 rounded-full bg-primary mt-0.5" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* Day progress */}
+      <DayProgress total={totalItems} completed={completedItems} pending={pendingItems} />
 
       {/* Suggestions */}
       {suggestions.length > 0 && (
-        <div className="mx-5 mt-4 p-3 rounded-2xl bg-accent/50 border border-border">
+        <div className="mx-5 mt-4 p-3 rounded-2xl bg-accent/50 border border-border/50">
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold text-primary">Suggestions</span>
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[11px] font-semibold text-primary">Suggestions du jour</span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {suggestions.map((s) => (
-              <span key={s} className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+              <span key={s} className="text-[11px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
                 {s}
               </span>
             ))}
@@ -183,117 +165,68 @@ export default function Planning() {
       )}
 
       {/* Timeline */}
-      <div className="px-5 mt-5 space-y-3">
+      <div className="px-5 mt-5 space-y-2">
+        {hasItems && (
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+            {format(selectedDay, 'EEEE d MMMM', { locale: fr })}
+          </p>
+        )}
+
         <AnimatePresence mode="popLayout">
-          {/* Daily recurring tasks */}
           {activeDailyRecurrings.map((r) => (
-            <motion.div
-              key={`recurring-${r.id}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-primary/20 bg-primary/5"
-            >
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-lg', getCategoryColor(r.categoryId) + '/10')}>
-                <AlarmClock className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{r.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {r.time} · {r.permanent ? '♾️ Permanent' : `Jusqu'au ${r.endDate}`}
-                </p>
-              </div>
-              <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">Quotidien</span>
-            </motion.div>
+            <TimelineItem
+              key={`rec-${r.id}`}
+              type="recurring"
+              title={r.title}
+              subtitle={r.permanent ? '♾️ Permanent' : `Jusqu'au ${r.endDate}`}
+              time={r.time}
+              categoryIcon={getCategoryIcon(r.categoryId)}
+              badge="Quotidien"
+              index={timelineIndex++}
+            />
           ))}
 
-          {/* Medication reminders */}
           {dayMeds.map((med) =>
             med.times.map((t) => (
-              <motion.div
+              <TimelineItem
                 key={`med-${med.id}-${t}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border"
-              >
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-lg">💊</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{med.name}</p>
-                  <p className="text-xs text-muted-foreground">{med.dosage} · {t}</p>
-                </div>
-                <div className={cn(
-                  'text-xs font-medium px-2 py-1 rounded-full',
-                  med.intake?.status === 'taken' ? 'bg-green-500/10 text-green-500' :
-                  med.intake?.status === 'missed' ? 'bg-red-500/10 text-red-500' :
-                  'bg-muted text-muted-foreground'
-                )}>
-                  {med.intake?.status === 'taken' ? '✅ Pris' :
-                   med.intake?.status === 'missed' ? '❌ Oublié' : '⏳ En attente'}
-                </div>
-              </motion.div>
+                type="medication"
+                title={med.name}
+                subtitle={`${med.dosage} · ${t}`}
+                time={t}
+                status={med.intake?.status === 'taken' ? 'taken' : med.intake?.status === 'missed' ? 'missed' : 'pending'}
+                index={timelineIndex++}
+              />
             ))
           )}
 
-          {/* Events */}
           {dayEvents.map((event) => (
-            <motion.div
+            <TimelineItem
               key={event.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border"
-            >
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-lg', getCategoryColor(event.categoryId) + '/10')}>
-                {getCategoryIcon(event.categoryId)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{event.title}</p>
-                <p className="text-xs text-muted-foreground">{event.startTime} - {event.endTime}</p>
-              </div>
-            </motion.div>
+              type="event"
+              title={event.title}
+              subtitle={`${event.startTime} - ${event.endTime}`}
+              time={event.startTime}
+              categoryIcon={getCategoryIcon(event.categoryId)}
+              index={timelineIndex++}
+            />
           ))}
 
-          {/* Tasks */}
           {dayTasks.map((task) => (
-            <motion.div
+            <TimelineItem
               key={task.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={cn(
-                'flex items-center gap-3 p-3 rounded-2xl bg-card border border-border',
-                task.status === 'completed' && 'opacity-50'
-              )}
-            >
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-lg', getCategoryColor(task.categoryId) + '/10')}>
-                {getCategoryIcon(task.categoryId)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={cn('text-sm font-semibold truncate', task.status === 'completed' && 'line-through')}>
-                  {task.title}
-                </p>
-                {task.time && <p className="text-xs text-muted-foreground">{task.time}</p>}
-              </div>
-              <div className={cn(
-                'text-xs font-medium px-2 py-1 rounded-full',
-                task.status === 'completed' ? 'bg-green-500/10 text-green-500' :
-                task.status === 'postponed' ? 'bg-amber-500/10 text-amber-500' :
-                'bg-muted text-muted-foreground'
-              )}>
-                {task.status === 'completed' ? '✅' : task.status === 'postponed' ? '⏳' : '○'}
-              </div>
-            </motion.div>
+              type="task"
+              title={task.title}
+              subtitle={task.time || 'Pas d\'heure définie'}
+              time={task.time}
+              status={task.status as 'pending' | 'completed' | 'postponed'}
+              categoryIcon={getCategoryIcon(task.categoryId)}
+              index={timelineIndex++}
+            />
           ))}
         </AnimatePresence>
 
-        {dayTasks.length === 0 && dayEvents.length === 0 && dayMeds.length === 0 && activeDailyRecurrings.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-4xl mb-3">📅</p>
-            <p className="text-sm text-muted-foreground">Aucun événement pour ce jour</p>
-            <p className="text-xs text-muted-foreground mt-1">Appuyez sur + pour en ajouter</p>
-          </div>
-        )}
+        {!hasItems && <EmptyDay onAdd={() => setQuickAddOpen(true)} />}
       </div>
 
       <FloatingAddButton onClick={() => setQuickAddOpen(true)} />
@@ -374,7 +307,6 @@ export default function Planning() {
               Ajouter la tâche récurrente
             </Button>
 
-            {/* Existing recurring tasks */}
             {dailyRecurrings.length > 0 && (
               <div className="pt-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tâches récurrentes actives</h3>
