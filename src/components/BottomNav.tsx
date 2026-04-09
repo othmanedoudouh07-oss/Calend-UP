@@ -1,4 +1,4 @@
-import { Calendar, CheckSquare, Heart, Settings } from 'lucide-react';
+import { Calendar, CheckSquare, Heart, Settings, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -7,7 +7,8 @@ const tabs = [
   { path: '/', icon: Calendar, label: 'Planning' },
   { path: '/tasks', icon: CheckSquare, label: 'Tâches' },
   { path: '/health', icon: Heart, label: 'Santé' },
-  { path: '/settings', icon: Settings, label: 'Paramètres' },
+  { path: '/profile', icon: User, label: 'Profil' },
+  { path: '/settings', icon: Settings, label: 'Réglages' },
 ];
 
 export function BottomNav() {

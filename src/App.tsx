@@ -9,6 +9,7 @@ import Planning from "./pages/Planning";
 import Tasks from "./pages/Tasks";
 import Health from "./pages/Health";
 import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ function AppContent() {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/health" element={<Health />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNav />
