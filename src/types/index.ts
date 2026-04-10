@@ -56,6 +56,8 @@ export interface Medication {
   startDate: string;
   endDate?: string;
   notes?: string;
+  color?: string;
+  icon?: string;
   active: boolean;
   createdAt: string;
 }
@@ -77,10 +79,15 @@ export interface Routine {
 }
 
 export type ThemeMode = 'dark' | 'colorful' | 'auto';
+export type ColorfulAccent = 'purple' | 'blue' | 'pink' | 'green' | 'orange';
 export type NotificationLevel = 'gentle' | 'normal' | 'strict';
 
 export interface Settings {
   theme: ThemeMode;
+  colorfulAccent: ColorfulAccent;
   notificationLevel: NotificationLevel;
+  notificationsEnabled: boolean;
+  morningDigestTime: string;
+  notifByCategory: Record<string, boolean>;
   categories: Category[];
 }
