@@ -1,96 +1,61 @@
 
 
-# PlanSmart — Application de Planning Hebdomadaire Intelligent
+# Améliorations : Thème coloré personnalisable, Notifications interactives, Catégories éditables, Interface Santé
 
-## Vue d'ensemble
-Application mobile native (Capacitor) de gestion de planning avec thème personnalisable (sombre/coloré), stockage local, suggestions intelligentes et rappels proactifs.
+## 1. Thème coloré avec choix de couleurs
 
----
+**Settings store** : Ajouter un champ `colorfulAccent` (ex: `'purple' | 'blue' | 'pink' | 'green' | 'orange'`) dans le store settings.
 
-## Arborescence & Navigation
+**CSS** : Créer des variantes `.colorful-purple`, `.colorful-blue`, `.colorful-pink`, `.colorful-green`, `.colorful-orange` dans `index.css`, chacune avec sa propre palette HSL (primary, accent, secondary).
 
-**Navigation principale** — Barre de navigation en bas avec 4 onglets :
+**UI Settings** : Quand le thème "Coloré" est sélectionné, afficher une rangée de cercles colorés cliquables pour choisir l'accent. Animation de sélection avec un check au centre.
 
-1. **📅 Planning** — Vue hebdomadaire (par défaut) avec possibilité de basculer en vue jour
-2. **✅ Tâches** — Liste des tâches par catégorie avec ajout rapide
-3. **💊 Santé** — Gestion des traitements et rappels médicaux
-4. **⚙️ Paramètres** — Thème, catégories, routines, préférences de notifications
+**useTheme hook** : Appliquer la classe composée (ex: `colorful colorful-pink`) sur `<html>`.
 
----
+## 2. Notifications interactives (Settings)
 
-## Écrans & Fonctionnalités
+Remplacer les boutons statiques par des cartes interactives avec :
+- Un **switch toggle** pour activer/désactiver les notifications globalement
+- Pour chaque niveau (Doux/Normal/Strict), afficher un **aperçu visuel** animé simulant le comportement (ex: 1 bulle pour doux, 3 bulles qui rebondissent pour strict)
+- Ajouter des options granulaires : toggle par catégorie (recevoir les notifs Sport, Travail, etc.)
+- Ajouter un **sélecteur d'heure** pour le résumé matinal
 
-### 1. Planning (écran principal)
-- Vue semaine avec timeline verticale, événements colorés par catégorie
-- Swipe gauche/droite pour changer de semaine
-- Bouton flottant "+" pour ajout rapide (tâche, événement ou prise médicament)
-- Section "Suggestions" en haut : tâches récurrentes détectées + routines à appliquer en 1 tap
-- Indicateur visuel des prises de médicaments du jour
+## 3. Catégories interactives (Settings)
 
-### 2. Ajout rapide (bottom sheet)
-- Formulaire contextuel qui pré-remplit selon l'heure et les habitudes
-- Choix du type : Événement / Tâche / Prise médicament
-- Sélection de catégorie avec pastilles colorées (Sport 🟢, Travail 🔵, Personnel 🟣, Santé 🔴...)
-- Récurrence (quotidien, hebdomadaire, personnalisé)
-- Configuration du rappel (5min, 15min, 30min, 1h avant)
+Remplacer les badges statiques par une liste éditable :
+- Chaque catégorie affichée comme une carte avec son icône, nom, et couleur
+- Bouton **modifier** (ouvre un mini-formulaire inline pour changer nom/icône/couleur)
+- Bouton **supprimer** avec confirmation
+- Bouton **"+ Nouvelle catégorie"** en bas avec un formulaire : nom, choix d'icône (grille d'emojis), choix de couleur (palette)
+- Drag-and-drop pour réordonner (optionnel, via framer-motion reorder)
 
-### 3. Tâches
-- Groupement par catégorie avec accordéons colorés
-- Glisser pour compléter ou reporter
-- Filtre : Aujourd'hui / Cette semaine / Toutes
-- Badge compteur de tâches en retard
+## 4. Interface Santé améliorée
 
-### 4. Module Santé
-- Liste des traitements actifs avec posologie
-- Formulaire d'ajout : nom du médicament, dosage, fréquence, horaires de prise, durée du traitement
-- Historique des prises (pris ✅ / oublié ❌ / reporté ⏳)
-- Rappels automatiques générés selon la posologie
-- Vue calendrier des prises
+**Page Health.tsx** :
+- Ajouter un **header avec statistiques** : cercle de progression des prises du jour (X/Y prises), streak de jours consécutifs
+- Séparer visuellement les prises par moment de la journée (Matin / Midi / Soir) avec des icônes ☀️ 🌤️ 🌙
+- Ajouter un **onglet Historique** avec un mini-calendrier montrant les jours verts (tout pris) / orange (partiel) / rouge (manqué)
+- Animations Framer Motion sur le changement de statut des prises (scale bounce)
 
-### 5. Routines & Templates
-- Créer des routines (ex: "Routine matin" = réveil + sport + petit-déj)
-- Appliquer une routine en 1 tap pour remplir une journée
-- Suggestions de routines basées sur les habitudes détectées
+**Formulaire ajout médicament** (Sheet) :
+- Formulaire en **étapes** (stepper) : 1) Nom + dosage, 2) Fréquence + horaires, 3) Durée + notes
+- Ajout d'un champ **date de fin** (optionnel) avec un toggle "Durée indéterminée"
+- Champ **notes** pour instructions spéciales (ex: "à prendre pendant le repas")
+- Choix de **couleur/icône** pour le médicament
+- Preview du médicament en bas du formulaire avant validation
 
-### 6. Paramètres
-- **Thème** : Sombre / Coloré / Automatique (selon l'heure)
-- **Catégories** : Gérer les rubriques et leurs couleurs
-- **Notifications** : Niveau d'insistance (doux, normal, strict avec re-rappel)
-- **Données** : Export/Import JSON pour backup
+## Fichiers modifiés
 
----
-
-## Système de notifications intelligentes
-- Notifications locales via Capacitor Local Notifications
-- Rappels stricts : si non acquitté, re-notification à intervalle croissant (5min, 15min, 30min)
-- Rappels médicaux : priorité haute, non silencieux
-- Résumé matinal : notification avec aperçu de la journée
-- Alerte de conflit si chevauchement d'événements
-
----
-
-## Aspect prédictif
-- Détection de patterns récurrents dans l'historique (ex: "sport le mardi à 18h" → suggestion)
-- Pré-remplissage intelligent des formulaires selon le contexte (heure, jour)
-- Alertes proactives : "Vous avez habituellement une tâche Sport le mardi, voulez-vous l'ajouter ?"
-
----
-
-## Design
-- Palette bicolore personnalisable avec pastilles de couleur vives par catégorie
-- Mode sombre par défaut avec option colorée
-- Typographie claire, espacement généreux
-- Micro-animations sur les interactions (complétion de tâche, changement de vue)
-- Icônes expressives pour chaque catégorie
-
----
-
-## Stack technique
-- **React + TypeScript + Tailwind CSS** — Interface
-- **Capacitor** — Build natif iOS/Android
-- **@capacitor/local-notifications** — Notifications locales
-- **localStorage / IndexedDB** — Stockage persistant local
-- **date-fns** — Gestion des dates
-- **Framer Motion** — Animations
-- **Zustand** — State management
+| Fichier | Changement |
+|---------|-----------|
+| `src/types/index.ts` | Ajouter `ColorfulAccent` type, champ `notes`/`color`/`icon` sur Medication |
+| `src/stores/useSettingsStore.ts` | Ajouter `colorfulAccent`, `notificationsEnabled`, `morningDigestTime`, `notifByCategory` |
+| `src/hooks/useTheme.ts` | Appliquer la sous-classe colorful |
+| `src/index.css` | 5 variantes de thème coloré |
+| `src/pages/SettingsPage.tsx` | Refonte sections thème, notifications, catégories |
+| `src/pages/Health.tsx` | Refonte complète avec stats, timeline par moment, historique |
+| `src/components/health/MedicationStepper.tsx` | Nouveau : formulaire multi-étapes |
+| `src/components/health/IntakeCalendar.tsx` | Nouveau : mini-calendrier historique |
+| `src/components/settings/CategoryEditor.tsx` | Nouveau : éditeur de catégories |
+| `src/components/settings/ColorPicker.tsx` | Nouveau : sélecteur de couleur accent |
 
