@@ -4,8 +4,10 @@ import { useHealthStore } from '@/stores/useHealthStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useProfileStore } from '@/stores/useProfileStore';
 import { cn } from '@/lib/utils';
-import { Moon, Palette, Sun, Bell, BellRing, BellOff, Download, Upload, Trash2, User, ChevronRight, Check } from 'lucide-react';
+import { Moon, Palette, Sun, Bell, BellRing, BellOff, Download, Upload, Trash2, User, ChevronRight, Check, Shield, Eye, FileDown, FileX, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useGDPRConsent } from '@/components/GDPRConsentBanner';
+import { useHealthConsent } from '@/components/health/HealthDataConsent';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -36,6 +38,8 @@ export default function SettingsPage() {
   const intakes = useHealthStore((s) => s.intakes);
   const routines = useRoutineStore((s) => s.routines);
   const navigate = useNavigate();
+  const gdpr = useGDPRConsent();
+  const healthConsent = useHealthConsent();
 
   const themes: { key: ThemeMode; icon: typeof Moon; label: string; desc: string }[] = [
     { key: 'dark', icon: Moon, label: 'Sombre', desc: 'Thème sombre élégant' },
@@ -273,20 +277,53 @@ export default function SettingsPage() {
           <CategoryEditor />
         </section>
 
-        {/* Data */}
+        {/* Vie privée & RGPD */}
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Données</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Shield className="w-4 h-4" /> Vie privée & RGPD
+          </h2>
           <div className="space-y-2">
+            {/* Voir mes données */}
+            <div className="p-3.5 rounded-2xl bg-card border border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Eye className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">Mes données</p>
+                  <p className="text-xs text-muted-foreground">Résumé de ce qui est stocké</p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Tâches', value: tasks.length },
+                  { label: 'Événements', value: events.length },
+                  { label: 'Traitements', value: medications.length },
+                  { label: 'Prises enregistrées', value: intakes.length },
+                  { label: 'Routines', value: routines.length },
+                  { label: 'Catégories', value: categories.length },
+                ].map((d) => (
+                  <div key={d.label} className="px-3 py-2 rounded-xl bg-muted/50 text-center">
+                    <p className="text-sm font-bold">{d.value}</p>
+                    <p className="text-[10px] text-muted-foreground">{d.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Droit à la portabilité */}
             <button onClick={handleExport} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Download className="w-5 h-5 text-primary" />
+                <FileDown className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <p className="text-sm font-semibold">Exporter</p>
-                <p className="text-xs text-muted-foreground">Sauvegarde JSON · {statsCount} éléments</p>
+                <p className="text-sm font-semibold">Droit à la portabilité</p>
+                <p className="text-xs text-muted-foreground">Exporter toutes mes données (JSON)</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
+
+            {/* Importer */}
             <button onClick={handleImport} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Upload className="w-5 h-5 text-primary" />
@@ -297,14 +334,45 @@ export default function SettingsPage() {
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
+
+            {/* Droit à l'effacement */}
             <button onClick={handleClearAll} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-destructive/20 hover:border-destructive/50 transition-all">
               <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-destructive" />
+                <FileX className="w-5 h-5 text-destructive" />
               </div>
               <div className="text-left flex-1">
-                <p className="text-sm font-semibold text-destructive">Tout supprimer</p>
-                <p className="text-xs text-muted-foreground">Action irréversible</p>
+                <p className="text-sm font-semibold text-destructive">Droit à l'effacement</p>
+                <p className="text-xs text-muted-foreground">Supprimer toutes mes données</p>
               </div>
+            </button>
+
+            {/* Retirer consentement */}
+            <button
+              onClick={() => {
+                gdpr.revoke();
+                healthConsent.revoke();
+              }}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <RotateCcw className="w-5 h-5 text-amber-500" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-sm font-semibold">Retirer mon consentement</p>
+                <p className="text-xs text-muted-foreground">Réaffiche les bandeaux de consentement</p>
+              </div>
+            </button>
+
+            {/* Politique de confidentialité */}
+            <button onClick={() => navigate('/privacy')} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-sm font-semibold">Politique de confidentialité</p>
+                <p className="text-xs text-muted-foreground">Consulter nos engagements RGPD</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
         </section>
