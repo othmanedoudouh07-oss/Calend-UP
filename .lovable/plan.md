@@ -1,61 +1,56 @@
 
 
-# Améliorations : Thème coloré personnalisable, Notifications interactives, Catégories éditables, Interface Santé
+# RGPD — Mise en conformité de PlanSmart
 
-## 1. Thème coloré avec choix de couleurs
+## Contexte
 
-**Settings store** : Ajouter un champ `colorfulAccent` (ex: `'purple' | 'blue' | 'pink' | 'green' | 'orange'`) dans le store settings.
+PlanSmart stocke toutes les données localement (localStorage via Zustand persist). Aucune donnée n'est envoyée à un serveur. Cela simplifie la conformité RGPD mais n'exempte pas de certaines obligations : information de l'utilisateur, consentement, droits d'accès/suppression/portabilité.
 
-**CSS** : Créer des variantes `.colorful-purple`, `.colorful-blue`, `.colorful-pink`, `.colorful-green`, `.colorful-orange` dans `index.css`, chacune avec sa propre palette HSL (primary, accent, secondary).
+---
 
-**UI Settings** : Quand le thème "Coloré" est sélectionné, afficher une rangée de cercles colorés cliquables pour choisir l'accent. Animation de sélection avec un check au centre.
+## Ce qui sera implémenté
 
-**useTheme hook** : Appliquer la classe composée (ex: `colorful colorful-pink`) sur `<html>`.
+### 1. Bandeau de consentement (Cookie/Data Consent)
+- Composant `GDPRConsentBanner.tsx` affiché au premier lancement
+- Stocke le consentement dans localStorage (`plansmart-gdpr-consent`)
+- L'utilisateur peut accepter ou consulter la politique avant d'utiliser l'app
+- Ne bloque pas l'usage mais reste visible tant que non accepté
 
-## 2. Notifications interactives (Settings)
+### 2. Page Politique de Confidentialité
+- Nouvelle page `/privacy` (`PrivacyPage.tsx`)
+- Contenu en français couvrant :
+  - Responsable du traitement
+  - Types de données collectées (tâches, santé, profil)
+  - Base légale (consentement)
+  - Durée de conservation (tant que l'utilisateur ne supprime pas)
+  - Stockage local uniquement — aucun transfert vers un serveur
+  - Droits de l'utilisateur (accès, rectification, suppression, portabilité)
+  - Données de santé : mention spécifique (données sensibles art. 9 RGPD)
+  - Contact
 
-Remplacer les boutons statiques par des cartes interactives avec :
-- Un **switch toggle** pour activer/désactiver les notifications globalement
-- Pour chaque niveau (Doux/Normal/Strict), afficher un **aperçu visuel** animé simulant le comportement (ex: 1 bulle pour doux, 3 bulles qui rebondissent pour strict)
-- Ajouter des options granulaires : toggle par catégorie (recevoir les notifs Sport, Travail, etc.)
-- Ajouter un **sélecteur d'heure** pour le résumé matinal
+### 3. Droits RGPD dans les Paramètres
+Nouvelle section "Vie privée & RGPD" dans `SettingsPage.tsx` :
+- **Voir mes données** : affiche un résumé des données stockées (nombre de tâches, médicaments, profil)
+- **Exporter mes données** : déjà existant (export JSON) — sera labellisé "Droit à la portabilité"
+- **Supprimer toutes mes données** : déjà existant — sera labellisé "Droit à l'effacement"
+- **Retirer mon consentement** : remet le bandeau de consentement
+- Lien vers la politique de confidentialité
 
-## 3. Catégories interactives (Settings)
+### 4. Consentement spécifique données de santé
+- Lors du premier ajout de médicament, afficher une modale d'information :
+  "Vous allez renseigner des données de santé. Ces données restent stockées uniquement sur votre appareil et ne sont jamais transmises."
+- Consentement stocké séparément (`plansmart-health-consent`)
 
-Remplacer les badges statiques par une liste éditable :
-- Chaque catégorie affichée comme une carte avec son icône, nom, et couleur
-- Bouton **modifier** (ouvre un mini-formulaire inline pour changer nom/icône/couleur)
-- Bouton **supprimer** avec confirmation
-- Bouton **"+ Nouvelle catégorie"** en bas avec un formulaire : nom, choix d'icône (grille d'emojis), choix de couleur (palette)
-- Drag-and-drop pour réordonner (optionnel, via framer-motion reorder)
+---
 
-## 4. Interface Santé améliorée
+## Fichiers impactés
 
-**Page Health.tsx** :
-- Ajouter un **header avec statistiques** : cercle de progression des prises du jour (X/Y prises), streak de jours consécutifs
-- Séparer visuellement les prises par moment de la journée (Matin / Midi / Soir) avec des icônes ☀️ 🌤️ 🌙
-- Ajouter un **onglet Historique** avec un mini-calendrier montrant les jours verts (tout pris) / orange (partiel) / rouge (manqué)
-- Animations Framer Motion sur le changement de statut des prises (scale bounce)
-
-**Formulaire ajout médicament** (Sheet) :
-- Formulaire en **étapes** (stepper) : 1) Nom + dosage, 2) Fréquence + horaires, 3) Durée + notes
-- Ajout d'un champ **date de fin** (optionnel) avec un toggle "Durée indéterminée"
-- Champ **notes** pour instructions spéciales (ex: "à prendre pendant le repas")
-- Choix de **couleur/icône** pour le médicament
-- Preview du médicament en bas du formulaire avant validation
-
-## Fichiers modifiés
-
-| Fichier | Changement |
-|---------|-----------|
-| `src/types/index.ts` | Ajouter `ColorfulAccent` type, champ `notes`/`color`/`icon` sur Medication |
-| `src/stores/useSettingsStore.ts` | Ajouter `colorfulAccent`, `notificationsEnabled`, `morningDigestTime`, `notifByCategory` |
-| `src/hooks/useTheme.ts` | Appliquer la sous-classe colorful |
-| `src/index.css` | 5 variantes de thème coloré |
-| `src/pages/SettingsPage.tsx` | Refonte sections thème, notifications, catégories |
-| `src/pages/Health.tsx` | Refonte complète avec stats, timeline par moment, historique |
-| `src/components/health/MedicationStepper.tsx` | Nouveau : formulaire multi-étapes |
-| `src/components/health/IntakeCalendar.tsx` | Nouveau : mini-calendrier historique |
-| `src/components/settings/CategoryEditor.tsx` | Nouveau : éditeur de catégories |
-| `src/components/settings/ColorPicker.tsx` | Nouveau : sélecteur de couleur accent |
+| Fichier | Action |
+|---------|--------|
+| `src/components/GDPRConsentBanner.tsx` | Nouveau — bandeau de consentement |
+| `src/components/health/HealthDataConsent.tsx` | Nouveau — modale consentement santé |
+| `src/pages/PrivacyPage.tsx` | Nouveau — politique de confidentialité |
+| `src/pages/SettingsPage.tsx` | Ajout section "Vie privée & RGPD" |
+| `src/pages/Health.tsx` | Intégration consentement santé |
+| `src/App.tsx` | Ajout route `/privacy`, ajout `GDPRConsentBanner` |
 
