@@ -7,6 +7,7 @@ import { Plus, Pill, Check, X, Clock, Trash2, Calendar, Sun, Sunset, Moon } from
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import MedicationStepper from '@/components/health/MedicationStepper';
 import IntakeCalendar from '@/components/health/IntakeCalendar';
+import HealthDataConsent, { useHealthConsent } from '@/components/health/HealthDataConsent';
 import type { IntakeStatus, Medication } from '@/types';
 
 type Tab = 'today' | 'treatments' | 'history';
@@ -27,6 +28,8 @@ const timeGroupMeta = {
 export default function Health() {
   const [addOpen, setAddOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('today');
+  const [healthConsentPending, setHealthConsentPending] = useState(false);
+  const healthConsent = useHealthConsent();
 
   const medications = useHealthStore((s) => s.medications);
   const intakes = useHealthStore((s) => s.intakes);
@@ -105,7 +108,13 @@ export default function Health() {
           <p className="text-sm text-muted-foreground mt-0.5">Suivi de traitements</p>
         </div>
         <button
-          onClick={() => setAddOpen(true)}
+          onClick={() => {
+            if (!healthConsent.consented) {
+              setHealthConsentPending(true);
+            } else {
+              setAddOpen(true);
+            }
+          }}
           className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center"
         >
           <Plus className="w-5 h-5" />
@@ -271,6 +280,17 @@ export default function Health() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Health data consent dialog */}
+      <HealthDataConsent
+        open={healthConsentPending}
+        onAccept={() => {
+          healthConsent.accept();
+          setHealthConsentPending(false);
+          setAddOpen(true);
+        }}
+        onCancel={() => setHealthConsentPending(false)}
+      />
 
       {/* Add medication sheet */}
       <Sheet open={addOpen} onOpenChange={setAddOpen}>
