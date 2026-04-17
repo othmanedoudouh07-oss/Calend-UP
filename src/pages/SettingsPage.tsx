@@ -4,7 +4,7 @@ import { useHealthStore } from '@/stores/useHealthStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useProfileStore } from '@/stores/useProfileStore';
 import { cn } from '@/lib/utils';
-import { Moon, Palette, Sun, Bell, BellRing, BellOff, Download, Upload, Trash2, User, ChevronRight, Check, Shield, Eye, FileDown, FileX, RotateCcw } from 'lucide-react';
+import { Moon, Palette, Sun, Bell, BellRing, BellOff, Download, Upload, Trash2, User, ChevronRight, Check, Shield, Eye, FileDown, FileX, RotateCcw, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGDPRConsent } from '@/components/GDPRConsentBanner';
 import { useHealthConsent } from '@/components/health/HealthDataConsent';
@@ -118,6 +118,23 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground mt-0.5">
               {profile.height > 0 ? `${profile.height}cm · ${profile.weight}kg` : 'Taille, poids, objectifs sport...'}
             </p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+        </motion.button>
+
+        {/* Install app */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => navigate('/install')}
+          className="w-full p-4 rounded-2xl bg-card border border-border flex items-center gap-4 text-left hover:border-primary/30 transition-all"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
+            <Smartphone className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">Installer sur mon téléphone</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Ajouter PlanSmart à l'écran d'accueil</p>
           </div>
           <ChevronRight className="w-5 h-5 text-muted-foreground" />
         </motion.button>

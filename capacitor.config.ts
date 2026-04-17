@@ -13,6 +13,15 @@ const config: CapacitorConfig = {
       smallIcon: 'ic_stat_icon_config_sample',
       iconColor: '#7C3AED',
     },
+    SplashScreen: {
+      launchShowDuration: 1500,
+      launchAutoHide: true,
+      backgroundColor: '#4C1D95',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
   },
 };
 
