@@ -4,7 +4,7 @@ import { useHealthStore } from '@/stores/useHealthStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useProfileStore } from '@/stores/useProfileStore';
 import { cn } from '@/lib/utils';
-import { Moon, Palette, Sun, Bell, BellRing, BellOff, Download, Upload, Trash2, User, ChevronRight, Check, Shield, Eye, FileDown, FileX, RotateCcw } from 'lucide-react';
+import { Moon, Palette, Sun, Bell, BellRing, BellOff, Download, Upload, Trash2, User, ChevronRight, Check, Shield, Eye, FileDown, FileX, RotateCcw, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGDPRConsent } from '@/components/GDPRConsentBanner';
 import { useHealthConsent } from '@/components/health/HealthDataConsent';
