@@ -122,6 +122,23 @@ export default function SettingsPage() {
           <ChevronRight className="w-5 h-5 text-muted-foreground" />
         </motion.button>
 
+        {/* Install app */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => navigate('/install')}
+          className="w-full p-4 rounded-2xl bg-card border border-border flex items-center gap-4 text-left hover:border-primary/30 transition-all"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
+            <Smartphone className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">Installer sur mon téléphone</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Ajouter PlanSmart à l'écran d'accueil</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+        </motion.button>
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
           {[
