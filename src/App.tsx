@@ -12,6 +12,7 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import PrivacyPage from "./pages/PrivacyPage";
+import InstallPage from "./pages/InstallPage";
 import GDPRConsentBanner from "./components/GDPRConsentBanner";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ function AppContent() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/install" element={<InstallPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <GDPRConsentBanner />
